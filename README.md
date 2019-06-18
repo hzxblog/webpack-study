@@ -130,4 +130,110 @@ htmlWebpackPlugin的chunks是enter中chunk的名称。
 
 ## 开发模式
 
+### 设置mode属性为development。
 
+```js
+const path = require('path');
+const htmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+  mode: 'development',
+  entry: './index.js',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'main.js',
+    publicPath: '/'
+  },
+   plugins: [
+      new htmlWebpackPlugin({
+        template: "index.html"
+      })
+    ]
+};
+
+```
+
+### 使用 source maps
+
+当我们将多个文件打包成一个文件时，如果一个文件中出现错误，堆栈跟踪就会直接指向到打包文件，我们无法知道具体是那个文件出错。
+这时如果我们使用source maps,source map 就会明确的告诉你那个文件出错。
+
+```js
+const path = require('path');
+const htmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+  mode: 'development',
+  entry: './index.js',
+  devtool: 'inline-source-map',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'main.js',
+    publicPath: '/'
+  },
+   plugins: [
+      new htmlWebpackPlugin({
+        template: "index.html"
+      })
+    ]
+};
+
+```
+在 err.js中
+
+```js
+console.lg()
+```
+浏览器报错
+
+```js
+Uncaught TypeError: console.lg is not a function
+    at Object../err.js (err.js:1)
+```
+
+### 使用webpack-dev-server
+
+
+```cmd
+npm install --S webpack-dev-server
+```
+
+```js
+const path = require('path');
+const htmlWebpackPlugin = require('html-webpack-plugin');
+
+module.exports = {
+  mode: 'development',
+  devtool: 'inline-source-map',
+  entry: './index.js',
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'main.js',
+    publicPath: '/'
+  },
+  devServer: {
+    contentBase: './dist',
+    port: 8080
+  },
+  plugins: [
+    new htmlWebpackPlugin({
+      template: "index.html"
+    })
+  ]
+};
+```
+
+```json
+{
+  "name": "demo01",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack-dev-server --config webpack.config.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
+
+```
