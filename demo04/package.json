@@ -1,0 +1,12 @@
+{
+  "name": "demo01",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "chunks": "webpack --config webpack.chunks.config.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
