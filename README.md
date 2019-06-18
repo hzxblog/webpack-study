@@ -128,7 +128,7 @@ module.exports = {
 ```
 htmlWebpackPlugin的chunks是enter中chunk的名称。
 
-## 开发模式
+## 开发模式 ([案例5](./demo05))
 
 ### 设置mode属性为development。
 
@@ -192,7 +192,7 @@ Uncaught TypeError: console.lg is not a function
 ```
 
 ### 使用webpack-dev-server
-
+webpack-dev-server 为提供了一个简单的 web服务器，并且具有实时重新加载功能。
 
 ```cmd
 npm install --S webpack-dev-server
@@ -236,4 +236,117 @@ module.exports = {
   "license": "ISC"
 }
 
+```
+
+## 分离代码  ([案例6](./demo06))
+
+当两个模块引用了同一个模块时，我们期望的是将这个模块单独打包，而不是分别打包到两个模块中造成代码重复。
+
+webpack.config.js
+```js
+const path = require('path');
+
+module.exports = {
+  mode: 'development',
+  devtool: 'inline-source-map',
+  entry: {
+    main: './index.js',
+    another: './another-module.js'
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].js',
+    publicPath: '/'
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all'
+    }
+  }
+};
+
+```
+打包结果 `index.js` 和 `another-module.js` 模块中引用的 `lodash` 被单独打包成 `vendors~another~main.js`;
+
+```js
+Built at: 2019-06-18 14:54:31
+                  Asset      Size                Chunks             Chunk Names
+             another.js  15.2 KiB               another  [emitted]  another
+                main.js  15.2 KiB                  main  [emitted]  main
+vendors~another~main.js  1.36 MiB  vendors~another~main  [emitted]  vendors~another~main
+
+```
+
+## 缓存
+
+如果每次运行后的文件名不更改，浏览器会认为它没更新，会使用缓存版本。
+
+这时可以通过替换 output.filename 中的 substitutions 设置，来定义输出文件的名称。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+module.exports = {
+  mode: 'development',
+  devtool: 'inline-source-map',
+  entry: {
+    main: './index.js',
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].[contenthash].js',
+    publicPath: '/'
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: 'cache',
+      template: "index.html"
+    })
+  ]
+};
+
+```
+### 提取提取引导模板和第三方库
+
+将webpack的runtime代码和第三方库代码单独提取出来，因为这些代码不常修改，在修改源代码从新编译是webpack产出文件时不会修改这些文件名，浏览器会直接提取缓存文件。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+module.exports = {
+  mode: 'development',
+  devtool: 'inline-source-map',
+  entry: {
+    main: './index.js',
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].[contenthash].js',
+    publicPath: '/'
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: 'cache',
+      template: "index.html"
+    })
+  ],
+  optimization: {
+    // 提取runtime文件
+    runtimeChunk: 'single',
+    splitChunks: {
+      cacheGroups: {
+        // 提取第三方库代码
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all'
+        }
+      }
+    }
+  }
+};
 ```
