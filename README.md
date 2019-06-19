@@ -277,7 +277,7 @@ vendors~another~main.js  1.36 MiB  vendors~another~main  [emitted]  vendors~anot
 
 ```
 
-## 缓存
+## 缓存 ([案例7](./demo07))
 
 如果每次运行后的文件名不更改，浏览器会认为它没更新，会使用缓存版本。
 
@@ -316,6 +316,7 @@ module.exports = {
 const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+
 module.exports = {
   mode: 'development',
   devtool: 'inline-source-map',
@@ -350,3 +351,192 @@ module.exports = {
   }
 };
 ```
+
+更详细的[文档](https://webpack.js.org/guides/caching/)
+
+> 注意： 在文档中提出要添加模块标识符才能达到修改本地文件，只变化main文件名，不变化其他打包文件的目的，但在我的测试下不需要加这个标识符自动有这种效果。
+
+## HMR ([案例8](./demo08))
+
+热模块替换就是值只替换修改的模块，不刷新页面，提高开发效率。
+
+webpack.config.js
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { HotModuleReplacementPlugin } = require('webpack');
+
+module.exports = {
+  mode: 'development',
+  devtool: 'inline-source-map',
+  entry: {
+    main: './index.js',
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].[hash].js',
+    publicPath: '/'
+  },
+  devServer: {
+    contentBase: './dist',
+    port: 8000,
+    // 开启热替换
+    hot: true
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: 'cache',
+      template: "index.html"
+    }),
+    // 开启热替换
+    new HotModuleReplacementPlugin()
+  ]
+};
+
+```
+
+index.js
+
+```js
+import _ from 'lodash';
+import printMe from './print'
+
+function component() {
+  var element = document.createElement('div');
+  var btn = document.createElement('button');
+
+  element.innerHTML = _.join(['Hello', 'webpack'], ' ');
+
+  btn.innerHTML = 'Click me and check the console!';
+  btn.onclick = printMe;
+
+  element.appendChild(btn);
+
+  return element;
+}
+
+document.body.appendChild(component());
+
+if (module.hot) {
+  module.hot.accept('./print.js', () => {
+    console.log('accept the updated printMe module!');
+    printMe();
+  })
+}
+
+```
+
+当我们更新print.js时，只会更新该模块。
+
+## 懒加载 ([案例9](./demo09))
+
+index.js
+
+````js
+import _ from 'lodash';
+
+function component() {
+  var element = document.createElement('div');
+  var btn = document.createElement('button');
+
+  element.innerHTML = _.join(['Hello', 'webpack'], ' ');
+
+  btn.innerHTML = 'Click me and check the console!';
+  btn.onclick = e => import('./print').then(module => {
+    const print = module.default();
+    print();
+  });
+
+  element.appendChild(btn);
+
+  return element;
+}
+
+document.body.appendChild(component());
+
+if (module.hot) {
+  module.hot.accept('./print.js', () => {
+    console.log('accept the updated printMe module!');
+    printMe();
+  })
+}
+
+````
+采用import()前：
+
+```js
+Built at: 2019-06-18 20:01:48
+                       Asset       Size  Chunks             Chunk Names
+                  index.html  196 bytes          [emitted]
+main.3da867b5364b7a8d8c20.js   2.28 MiB    main  [emitted]  main
+
+
+```
+采用import()后：
+```js
+Built at: 2019-06-18 20:06:49
+                       Asset       Size  Chunks             Chunk Names
+   0.fc6d77991376136f948f.js  940 bytes       0  [emitted]
+                  index.html  196 bytes          [emitted]
+main.fc6d77991376136f948f.js   2.29 MiB    main  [emitted]  main
+
+```
+利用懒加载，webpack会将该模块单独生成一个文件，当我们点击按钮时，浏览器才会加载该模块文件，这样减小了页面初始化时间。
+
+## shim 预制依赖 ([案例10](./demo10))
+
+### 设置全局全量
+
+象jQuery这种第三方库需要引用第三方库，我们可以设置全局变量。
+
+```js
+const path = require('path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { ProvidePlugin } = require('webpack');
+
+module.exports = {
+  mode: 'development',
+  devtool: 'inline-source-map',
+  entry: {
+    main: './index.js',
+  },
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].[hash].js',
+    publicPath: '/'
+  },
+  devServer: {
+    contentBase: './dist',
+    port: 8000
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: 'cache',
+      template: "index.html"
+    }),
+    new ProvidePlugin({
+      _: 'lodash'
+    })
+  ]
+};
+
+```
+
+这样我们可以在任何地方使用 `_` 方法。 我们还可以通过配置 `数组路径`来暴露某个模块的单个导出： `FunctionName: [module, child]`
+
+```js
+   new ProvidePlugin({
+      _: 'lodash',
+      lodash: ['lodash', 'join']
+   })
+```
+
+在这个例子中我们可以全局调用`lodash`(即lodash模块的join方法)方法了。
+
+## tree shaking ([案例11](./demo11))
+
+`optimization.usedExports: true`, 不导出未引用到的代码，在production模式下默认开启，其他模式默认关闭。

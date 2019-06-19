@@ -1,7 +1,7 @@
 const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const webpack = require('webpack');
+const { HotModuleReplacementPlugin } = require('webpack');
 
 module.exports = {
   mode: 'development',
@@ -11,8 +11,13 @@ module.exports = {
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].[contenthash].js',
+    filename: '[name].[hash].js',
     publicPath: '/'
+  },
+  devServer: {
+    contentBase: './dist',
+    port: 8000,
+    hot: true
   },
   plugins: [
     new CleanWebpackPlugin(),
@@ -20,19 +25,7 @@ module.exports = {
       title: 'cache',
       template: "index.html"
     }),
-    // new webpack.HashedModuleIdsPlugin()
-  ],
-  optimization: {
-    runtimeChunk: 'single',
-    splitChunks: {
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all'
-        }
-      }
-    }
-  }
+    new HotModuleReplacementPlugin()
+  ]
 };
 
