@@ -540,3 +540,5 @@ module.exports = {
 ## tree shaking ([案例11](./demo11))
 
 `optimization.usedExports: true`, 不导出未引用到的代码，在production模式下默认开启，其他模式默认关闭。
+
+## 一个完整简单的webpack配置 ([案例12](./demo12-all))
