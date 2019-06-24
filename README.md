@@ -1,6 +1,7 @@
 # Webpack的学习
 
 跟着官网手册进行练习。
+![webpack](./Webpack.png)
 
 ## 单文件入口 ([案例1](./demo01))
 
